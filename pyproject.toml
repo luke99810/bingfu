@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bingfu"
+version = "0.1.0"
+authors = [
+    { name = "SuXin (州哥)", email = "luke99810@example.com" },
+]
+description = "BingFu: A lightweight multi-agent framework inspired by ancient Chinese warfare, supporting drum (start) and gong (stop) signals."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "requests>=2.28",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "isort>=5.12",
+    "mypy>=1.0",
+]
+
+[project.scripts]
+bingfu = "bingfu.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/luke99810/bingfu"
+Repository = "https://github.com/luke99810/bingfu.git"
+Issues = "https://github.com/luke99810/bingfu/issues"
+
+[tool.setuptools.packages.find]
+include = ["bingfu*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3

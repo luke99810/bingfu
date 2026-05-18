@@ -1,0 +1,133 @@
+# BingFu (兵符) Configuration File
+# Configuration format: YAML
+# For detailed explanation, see: https://github.com/luke99810/bingfu/docs/configuration.md
+
+# ==================== Core Settings ====================
+core:
+  # Framework name (框架名称)
+  framework_name: "BingFu"
+  
+  # Version (版本)
+  version: "0.1.0"
+  
+  # Debug mode (调试模式)
+  debug: false
+  
+  # Log level: DEBUG, INFO, WARNING, ERROR (日志级别)
+  log_level: "INFO"
+  
+  # Maximum number of agents allowed (允许的最大智能体数量)
+  max_agents: 10
+
+# ==================== Agent Settings ====================
+agent:
+  # Default agent name (默认智能体名称)
+  default_name: "DefaultAgent"
+  
+  # Agent thinking timeout in seconds (智能体思考超时时间，秒)
+  thinking_timeout: 30
+  
+  # Enable memory for agents (为智能体启用记忆功能)
+  enable_memory: true
+  
+  # Memory storage type: "file" or "database" (记忆存储类型)
+  memory_type: "file"
+  
+  # Memory file path (记忆文件路径)
+  memory_path: "./memory/"
+
+# ==================== Signal Settings ====================
+signal:
+  # Enable drum signal (启用击鼓信号)
+  enable_drum: true
+  
+  # Enable gong signal (启用鸣金信号)
+  enable_gong: true
+  
+  # Signal timeout in seconds (信号超时时间，秒)
+  signal_timeout: 60
+  
+  # Maximum retries for failed signals (失败信号的最大重试次数)
+  max_retries: 3
+
+# ==================== Commander Settings ====================
+commander:
+  # Commander mode: "centralized" or "distributed" (指挥模式)
+  mode: "centralized"
+  
+  # Coordination strategy: "round_robin", "priority", "custom" (协调策略)
+  strategy: "round_robin"
+  
+  # Maximum coordination rounds (最大协调轮数)
+  max_rounds: 10
+
+# ==================== Tool Settings ====================
+tool:
+  # Enable tool usage (启用工具使用)
+  enable_tools: true
+  
+  # Allowed tool types (允许的工具类型)
+  allowed_types:
+    - "web_search"
+    - "calculator"
+    - "file_reader"
+    - "custom"
+  
+  # Tool execution timeout in seconds (工具执行超时时间，秒)
+  execution_timeout: 120
+
+# ==================== Logging Settings ====================
+logging:
+  # Enable logging (启用日志记录)
+  enable: true
+  
+  # Log file path (日志文件路径)
+  log_file: "./logs/bingfu.log"
+  
+  # Log rotation: size in MB (日志轮转：大小，MB)
+  max_file_size_mb: 10
+  
+  # Maximum number of log files to keep (保留的最大日志文件数)
+  backup_count: 5
+
+# ==================== Visualization Settings ====================
+visualization:
+  # Enable visualization (启用可视化)
+  enable: false  # Will be enabled in future versions (未来版本将启用)
+  
+  # Visualization type: "tkinter", "pyqt", "pywebview" (可视化类型)
+  type: "tkinter"
+  
+  # Window title (窗口标题)
+  window_title: "BingFu - Command Center"
+  
+  # Window width (窗口宽度)
+  window_width: 800
+  
+  # Window height (窗口高度)
+  window_height: 600
+
+# ==================== Advanced Settings ====================
+advanced:
+  # Enable experimental features (启用实验性特性)
+  enable_experimental: false
+  
+  # Custom plugins path (自定义插件路径)
+  plugins_path: "./plugins/"
+  
+  # Enable API server (启用 API 服务器)
+  enable_api: false
+  
+  # API server port (API 服务器端口)
+  api_port: 8080
+
+# ==================== Example Usage ====================
+# To use this configuration file:
+# 1. Copy this file to your project root directory
+# 2. Rename it to `config.yaml` (if it's not already)
+# 3. Modify the settings as needed
+# 4. Load it in your code:
+#
+#   from bingfu import BingFu
+#   master = BingFu(config_file="config.yaml")
+#   master.drum(...)
