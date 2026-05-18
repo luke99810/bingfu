@@ -6,7 +6,7 @@ Inspired by ancient Chinese warfare strategies.
 以中国古代军事智慧为灵感的多智能体协作框架
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 __author__ = "SuXin (州哥)"
 __email__ = "luke99810@example.com"
 
@@ -17,6 +17,7 @@ from bingfu.signal import Drum, Gong
 from bingfu.commander import Commander
 from bingfu.bingfu import BingFu
 from bingfu.tactics import TacticsEngine, SunTzuAgent, TacticType, TacticalContext
+from bingfu.visual import MilitaryCommandConsole
 
 __all__ = [
     # 核心模块
@@ -32,4 +33,6 @@ __all__ = [
     "SunTzuAgent",
     "TacticType",
     "TacticalContext",
+    # 可视化控制台
+    "MilitaryCommandConsole",
 ]

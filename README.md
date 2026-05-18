@@ -25,7 +25,8 @@ The framework is designed to be simple, extensible, and fun, with a nod to Chine
 - **Chinese Cultural Twist**: Naming and concepts from ancient Chinese warfare.
 - **Tactics Engine**: Built‑in Sun Tzu's Art of War strategy support.
 - **Famous Generals**: Pre‑built agents inspired by legendary Chinese generals.
-- **Visualization Ready**: Future desktop window visualization support (tkinter/PyQt/pywebview).
+- **Visualization Ready**: Desktop window visualization with MilitaryCommandConsole.
+- **中军帐可视化**：古代军事风格的桌面控制台界面。
 
 ### 📦 Installation
 
@@ -100,24 +101,7 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - **中国文化特色**：命名和概念源自中国古代战争。
 - **孙子兵法战术引擎**：内置古代军事智慧。
 - **古代名将Agent**：白起、韩信、项羽、诸葛亮等预置Agent。
-- **可视化就绪**：未来支持桌面窗口可视化（tkinter/PyQt/pywebview）。
-
-### 📦 安装
-
-```bash
-# 克隆仓库
-git clone https://github.com/luke99810/bingfu.git
-cd bingfu
-
-# 安装包（可编辑模式）
-pip install -e .
-```
-
-或者直接从 PyPI 安装（发布后）：
-
-```bash
-pip install bingfu
-```
+- **可视化就绪**：支持古代军事风格桌面控制台（中军帐）。
 
 ### 🚀 快速开始
 
@@ -136,6 +120,27 @@ master.drum("侦察兵", "侦察区域")
 
 # 发送鸣金信号（停止）
 master.gong("侦察兵")
+```
+
+### 🎯 中军帐可视化
+
+```python
+from bingfu.visual import MilitaryCommandConsole
+
+# 创建可视化控制台
+console = MilitaryCommandConsole(title="兵符 · 中军帐")
+
+# 添加将领
+console.add_general("韩信", "online", "统帅", "正在分析战场形势")
+
+# 添加军情报告
+console.add_report("侦察回报", "发现敌军粮草运输队", "success")
+
+# 更新战役态势
+console.update_battle_status(30000, 80000, "敌众我寡，宜用奇兵")
+
+# 启动控制台
+console.run()
 ```
 
 有关多智能体协调，请参阅 `examples/` 目录。
@@ -166,16 +171,22 @@ bingfu-framework/
 │   ├── signal.py         # Drum/Gong signals (信号)
 │   ├── commander.py      # Multi‑agent coordinator (指挥官)
 │   ├── tactics.py        # Sun Tzu tactics engine (战术引擎)
-│   ├── bingfu.py        # Main BingFu class (主类)
-│   └── cli.py           # Command‑line interface (CLI)
+│   ├── bingfu.py         # Main BingFu class (主类)
+│   ├── cli.py            # Command‑line interface (CLI)
+│   └── visual/            # Visualization module (可视化)
+│       ├── __init__.py
+│       ├── styles.py     # Style constants (样式常量)
+│       ├── components.py # UI components (UI组件)
+│       └── console.py    # MilitaryCommandConsole (中军帐)
 ├── examples/             # Usage examples (使用示例)
-│   ├── basic_usage.py   # Basic usage (基础用法)
-│   ├── multi_agent.py   # Multi‑agent coordination (多智能体)
+│   ├── basic_usage.py    # Basic usage (基础用法)
+│   ├── multi_agent.py    # Multi‑agent coordination (多智能体)
 │   ├── custom_agent.py   # Custom agents (自定义智能体)
-│   ├── tool_usage.py    # Tool usage (工具使用)
-│   ├── memory_usage.py  # Memory management (记忆管理)
+│   ├── tool_usage.py     # Tool usage (工具使用)
+│   ├── memory_usage.py   # Memory management (记忆管理)
 │   ├── famous_generals.py # Famous generals (古代名将)
-│   └── cli_guide.py     # CLI guide (CLI指南)
+│   ├── cli_guide.py      # CLI guide (CLI指南)
+│   └── console_demo.py   # Console visualization (中军帐演示)
 ├── tests/                # Unit tests (单元测试)
 │   ├── test_agent.py
 │   ├── test_signal.py
@@ -186,9 +197,9 @@ bingfu-framework/
 ├── requirements.txt      # Fixed dependencies (固定依赖)
 ├── .gitignore            # Git ignore rules
 ├── LICENSE               # MIT License
-├── CHANGELOG.md         # Version history
-├── config.yaml          # Example configuration
-└── README.md            # This file (中英文)
+├── CHANGELOG.md          # Version history
+├── config.yaml           # Example configuration
+└── README.md             # This file (中英文)
 ```
 
 ---
@@ -206,7 +217,8 @@ bingfu-framework/
 - [x] Famous generals examples (古代名将示例)
 - [x] Extended examples (扩展示例)
 - [x] Unit tests (单元测试)
-- [ ] Visualization (可视化) — 未来版本
+- [x] Visualization (可视化) ✅ 已完成
+- [ ] Web version (Web版本) — 未来版本
 
 ### 🎯 Quick Demo (快速演示)
 
