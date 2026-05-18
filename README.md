@@ -16,13 +16,15 @@ It allows you to create **single agents** or **multi‑agent systems** that comm
 
 The framework is designed to be simple, extensible, and fun, with a nod to Chinese military strategy.
 
-### ✨ Features
+### ✨ Features (特性)
 
 - **Lightweight**: Minimal dependencies, fast to get started.
 - **Single & Multi‑Agent**: Support both solo agents and coordinated teams.
 - **Signal System**: Drum/Gong signals for clear control flow.
 - **Extensible**: Easily add custom agents, tools, and memory.
 - **Chinese Cultural Twist**: Naming and concepts from ancient Chinese warfare.
+- **Tactics Engine**: Built‑in Sun Tzu's Art of War strategy support.
+- **Famous Generals**: Pre‑built agents inspired by legendary Chinese generals.
 - **Visualization Ready**: Future desktop window visualization support (tkinter/PyQt/pywebview).
 
 ### 📦 Installation
@@ -96,6 +98,8 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - **信号系统**：击鼓/鸣金信号，控制流程清晰。
 - **可扩展**：轻松添加自定义智能体、工具和记忆。
 - **中国文化特色**：命名和概念源自中国古代战争。
+- **孙子兵法战术引擎**：内置古代军事智慧。
+- **古代名将Agent**：白起、韩信、项羽、诸葛亮等预置Agent。
 - **可视化就绪**：未来支持桌面窗口可视化（tkinter/PyQt/pywebview）。
 
 ### 📦 安装
@@ -154,30 +158,37 @@ master.gong("侦察兵")
 
 ```
 bingfu-framework/
-├── bingfu/               # Main package
-│   ├── __init__.py
-│   ├── agent.py          # Agent class
-│   ├── tool.py           # Tool class
-│   ├── memory.py         # Memory class
-│   ├── signal.py         # Drum/Gong signals
-│   ├── commander.py      # Multi‑agent coordinator
-│   ├── bingfu.py         # Main BingFu class
-│   └── cli.py            # Command‑line interface
-├── examples/             # Usage examples
-│   ├── basic_usage.py
-│   ├── multi_agent.py
-│   └── custom_agent.py
-├── tests/                # Unit tests
+├── bingfu/               # Main package (主包)
+│   ├── __init__.py       # Package exports (包导出)
+│   ├── agent.py          # Agent class (智能体)
+│   ├── tool.py           # Tool class (工具)
+│   ├── memory.py         # Memory class (记忆)
+│   ├── signal.py         # Drum/Gong signals (信号)
+│   ├── commander.py      # Multi‑agent coordinator (指挥官)
+│   ├── tactics.py        # Sun Tzu tactics engine (战术引擎)
+│   ├── bingfu.py        # Main BingFu class (主类)
+│   └── cli.py           # Command‑line interface (CLI)
+├── examples/             # Usage examples (使用示例)
+│   ├── basic_usage.py   # Basic usage (基础用法)
+│   ├── multi_agent.py   # Multi‑agent coordination (多智能体)
+│   ├── custom_agent.py   # Custom agents (自定义智能体)
+│   ├── tool_usage.py    # Tool usage (工具使用)
+│   ├── memory_usage.py  # Memory management (记忆管理)
+│   ├── famous_generals.py # Famous generals (古代名将)
+│   └── cli_guide.py     # CLI guide (CLI指南)
+├── tests/                # Unit tests (单元测试)
 │   ├── test_agent.py
 │   ├── test_signal.py
-│   └── test_commander.py
-├── pyproject.toml        # Project configuration
-├── requirements.txt      # Fixed dependencies
+│   ├── test_commander.py
+│   ├── test_tool.py
+│   └── test_memory.py
+├── pyproject.toml        # Project configuration (项目配置)
+├── requirements.txt      # Fixed dependencies (固定依赖)
 ├── .gitignore            # Git ignore rules
 ├── LICENSE               # MIT License
-├── CHANGELOG.md          # Version history
-├── config.yaml           # Example configuration
-└── README.md             # This file (中英文)
+├── CHANGELOG.md         # Version history
+├── config.yaml          # Example configuration
+└── README.md            # This file (中英文)
 ```
 
 ---
@@ -191,9 +202,28 @@ bingfu-framework/
 - [x] Commander (multi‑agent) (指挥系统)
 - [x] Main BingFu class (兵符主类)
 - [x] CLI interface (命令行界面)
-- [x] Examples (示例)
-- [x] Tests (测试)
+- [x] Sun Tzu tactics engine (孙子兵法战术引擎)
+- [x] Famous generals examples (古代名将示例)
+- [x] Extended examples (扩展示例)
+- [x] Unit tests (单元测试)
 - [ ] Visualization (可视化) — 未来版本
+
+### 🎯 Quick Demo (快速演示)
+
+```python
+# 孙子兵法战术引擎
+from bingfu import TacticsEngine, TacticalContext
+
+engine = TacticsEngine()
+context = TacticalContext(
+    self_strength=30000,
+    enemy_strength=80000,
+    terrain="山地",
+    morale=70
+)
+result = engine.analyze(context)
+print(result['recommended_tactic'])
+```
 
 ---
 

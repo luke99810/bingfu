@@ -10,50 +10,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] (未发布)
 
 ### Added (新增)
-- **Project Structure (项目结构)**
-  - `pyproject.toml` — Project configuration with dependencies
-  - `README.md` — Complete Chinese/English documentation
-  - `.gitignore` — Python project ignore rules
-  - `LICENSE` — MIT License
-  - `CHANGELOG.md` — Version history
-  - `config.yaml` — Complete configuration example
 
-- **Core Modules (核心模块)**
-  - `bingfu/__init__.py` — Package initialization, exports all classes
-  - `bingfu/agent.py` — Agent class with drum/gong signals, tools, memory
-  - `bingfu/tool.py` — Tool class for creating reusable tools
-  - `bingfu/memory.py` — Memory class (file-based or in-memory)
-  - `bingfu/signal.py` — Drum/Gong signal system (击鼓/鸣金)
-  - `bingfu/commander.py` — Multi-agent coordinator (指挥系统)
-  - `bingfu/bingfu.py` — Main BingFu class (兵符主类)
-  - `bingfu/cli.py` — Command-line interface (命令行界面)
+- **孙子兵法战术引擎**
+  - `bingfu/tactics.py` — 完整的孙子兵法十三篇战术实现
+    - `TacticsEngine` 类：战场态势分析
+    - `SunTzuAgent` 类：智能军师Agent
+    - `TacticType` 枚举：13种战术类型
+    - `TacticalContext` 模型：战术上下文
 
-- **Examples (示例)**
-  - `examples/basic_usage.py` — Basic usage with single agent
-  - `examples/multi_agent.py` — Multi-agent coordination examples
-  - `examples/custom_agent.py` — Custom agent with tools and memory
+- **古代名将示例**
+  - `examples/famous_generals.py` — 十大名将Agent实现
+    - 白起、韩信、项羽、诸葛亮、岳飞等
+    - 完整战役模拟场景
 
-- **Tests (测试)**
-  - `tests/__init__.py` — Test package initialization
-  - `tests/test_agent.py` — Agent class unit tests
-  - `tests/test_signal.py` — Signal class unit tests
-  - `tests/test_commander.py` — Commander class unit tests
+- **工具与记忆示例**
+  - `examples/tool_usage.py` — 工具使用完整示例
+  - `examples/memory_usage.py` — 记忆系统完整示例
+
+- **CLI指南**
+  - `examples/cli_guide.py` — 完整CLI使用文档
+
+- **单元测试补全**
+  - `tests/test_tool.py` — Tool类完整测试
+  - `tests/test_memory.py` — Memory类完整测试
 
 ### Changed (变更)
-- Updated author email to match GitHub username (luke99810)
-- Updated README with complete development status
-
-### Deprecated (弃用)
-- None
-
-### Removed (移除)
-- Mini-program related planning (removed mini-program references)
-
-### Fixed (修复)
-- None
-
-### Security (安全)
-- None
+- 更新README，添加新功能说明
+- 更新`__init__.py`，导出tactics模块
+- 完善项目结构文档
 
 ---
 
