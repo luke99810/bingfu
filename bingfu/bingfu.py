@@ -1,7 +1,7 @@
 """
 BingFu main module (兵符主模块)
 Implements the main BingFu class — the entry point of the framework.
-Combines Agent, Tool, Memory, Signal, and Commander.
+Combines Agent, Tool, Memory, Signal, Commander, and LLM.
 """
 
 from typing import Any, Dict, List, Optional
@@ -22,7 +22,7 @@ class BingFu(BaseModel):
     """
     
     name: str = Field(default="BingFu", description="Framework name")
-    version: str = Field(default="0.1.0", description="Framework version")
+    version: str = Field(default="0.4.0", description="Framework version")
     
     # Core components (核心组件)
     agents: Dict[str, Agent] = Field(
@@ -49,6 +49,16 @@ class BingFu(BaseModel):
         default=None,
         description="Loaded configuration dictionary"
     )
+
+    # LLM Manager (军师调度府)
+    llm_manager: Optional[Any] = Field(
+        default=None,
+        description="LLM configuration manager"
+    )
+    default_llm: Optional[Any] = Field(
+        default=None,
+        description="Default LLM Provider instance"
+    )
     
     class Config:
         arbitrary_types_allowed = True
@@ -58,12 +68,17 @@ class BingFu(BaseModel):
     def add_agent(self, agent: Agent) -> None:
         """
         Add an agent to BingFu.
-        
+        Automatically binds the default LLM if the agent doesn't have one.
+
         Args:
             agent (Agent): The agent to add.
         """
         self.agents[agent.name] = agent
-        
+
+        # 自动绑定默认 LLM
+        if self.default_llm and not agent.llm:
+            agent.llm = self.default_llm
+
         # If commander exists, also add to commander
         if self.commander:
             self.commander.add_agent(agent)
@@ -239,12 +254,51 @@ class BingFu(BaseModel):
     def load_config(self, config_file: str) -> None:
         """
         Load configuration from YAML file.
-        
+        Automatically initializes LLM providers if configured.
+
         Args:
             config_file (str): Path to config YAML file.
         """
         with open(config_file, "r", encoding="utf-8") as f:
             self.config = yaml.safe_load(f)
+
+        # 自动初始化 LLM
+        if self.config and "llm" in self.config:
+            self._init_llm_from_config()
+
+    def _init_llm_from_config(self) -> None:
+        """从配置初始化 LLM Manager 和默认 Provider"""
+        try:
+            from bingfu.llm.config import LLMManager
+            from bingfu.llm.factory import LLMFactory
+
+            self.llm_manager = LLMManager.from_yaml_dict(self.config)
+
+            if self.llm_manager.providers:
+                self.default_llm = LLMFactory.from_manager(self.llm_manager)
+                if self.default_llm:
+                    # 将 LLM 绑定到所有已注册的 Agent
+                    for agent in self.agents.values():
+                        if not agent.llm:
+                            agent.llm = self.default_llm
+        except Exception as e:
+            # LLM 初始化失败不影响框架其他功能
+            import sys
+            print(f"⚠️ LLM 初始化失败: {e}（框架仍可使用，但将领无智能执行能力）")
+
+    def set_llm(self, provider: Any, set_as_default: bool = True) -> None:
+        """
+        手动设置 LLM Provider
+
+        Args:
+            provider: LLM Provider 实例
+            set_as_default: 是否设为默认（对所有 Agent 生效）
+        """
+        if set_as_default:
+            self.default_llm = provider
+            for agent in self.agents.values():
+                if not agent.llm:
+                    agent.llm = provider
     
     def save_config(self, config_file: str) -> None:
         """
@@ -262,7 +316,7 @@ class BingFu(BaseModel):
     def status(self) -> Dict[str, Any]:
         """
         Get BingFu status.
-        
+
         Returns:
             Dict[str, Any]: Status information.
         """
@@ -273,11 +327,18 @@ class BingFu(BaseModel):
             "tool_count": len(self.tools),
             "memory_count": len(self.memories),
             "commander_enabled": self.commander is not None,
+            "llm_enabled": self.default_llm is not None,
         }
-        
+
         if self.commander:
             result["commander"] = str(self.commander)
-        
+
+        if self.default_llm:
+            result["llm"] = str(self.default_llm)
+
+        if self.llm_manager:
+            result["llm_providers"] = list(self.llm_manager.providers.keys())
+
         return result
     
     def __str__(self) -> str:

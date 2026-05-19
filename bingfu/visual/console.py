@@ -1,11 +1,15 @@
 """
 BingFu 中军帐主控制台
 古代军事风格的Multi-Agent可视化监控界面
+
+v0.4.0: 新增 LLM 驱动的自然语言理解
+当配置了 LLM Provider 后，自然语言指令将走 LLM 解析而非关键词匹配。
 """
 
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
 import threading
+import json
 from typing import Dict, Any, List, Optional, Callable
 from datetime import datetime
 
@@ -49,7 +53,9 @@ class MilitaryCommandConsole:
         width: int = 1200,
         height: int = 800,
         commander: Optional[Commander] = None,
-        memory: Optional[Memory] = None
+        memory: Optional[Memory] = None,
+        llm_provider: Optional[Any] = None,
+        bingfu_instance: Optional[Any] = None,
     ):
         """
         初始化控制台
@@ -60,12 +66,16 @@ class MilitaryCommandConsole:
             height: 窗口高度
             commander: 可选的Commander实例，用于与框架集成
             memory: 可选的Memory实例，用于状态持久化
+            llm_provider: 可选的LLM Provider实例，用于自然语言理解
+            bingfu_instance: 可选的BingFu实例，用于框架集成
         """
         self.title = title
         self.width = width
         self.height = height
         self.commander = commander
         self.memory = memory
+        self.llm_provider = llm_provider
+        self.bingfu_instance = bingfu_instance
 
         # 内部状态
         self.generals: Dict[str, Dict] = {}
@@ -383,6 +393,20 @@ class MilitaryCommandConsole:
         """设置Memory实例"""
         self.memory = memory
 
+    def set_llm_provider(self, provider: Any):
+        """
+        设置 LLM Provider 实例（配置军师）
+
+        Args:
+            provider: LLM Provider 实例
+        """
+        self.llm_provider = provider
+        self._log(f"🧠 军师已任命：{provider}")
+
+    def set_bingfu_instance(self, instance: Any):
+        """设置 BingFu 实例"""
+        self.bingfu_instance = instance
+
     # ========== 内部方法 ==========
 
     def _refresh_generals(self):
@@ -470,7 +494,240 @@ class MilitaryCommandConsole:
     def _handle_natural_language(self, text: str):
         """
         自然语言指令处理器
-        基于关键词匹配，将自然语言映射到具体操作
+
+        优先使用 LLM 理解，无 LLM 时降级为关键词匹配。
+        """
+        # === LLM 模式 ===
+        if self.llm_provider:
+            self._handle_with_llm(text)
+            return
+
+        # === 关键词匹配模式（降级方案） ===
+        self._handle_with_keywords(text)
+
+    def _handle_with_llm(self, text: str):
+        """
+        LLM 驱动的自然语言理解
+
+        将用户输入和当前框架状态交给 LLM，
+        LLM 返回结构化的操作指令，控制台执行。
+        """
+        self._log("🧠 军师正在理解军令...")
+
+        # 构建上下文
+        context = self._build_llm_context()
+
+        system_prompt = (
+            "你是兵符框架的中军帐AI调度官。用户用自然语言下达军令，"
+            "你需要理解意图并返回JSON格式的操作指令。\n\n"
+            "可用操作：\n"
+            "1. {\"action\": \"query_generals\"} — 查询将领列表\n"
+            "2. {\"action\": \"query_status\"} — 查询战役态势\n"
+            "3. {\"action\": \"query_reports\"} — 查询军情报告\n"
+            "4. {\"action\": \"add_general\", \"name\": \"...\", \"status\": \"online\", \"role\": \"...\"} — 添加将领\n"
+            "5. {\"action\": \"remove_general\", \"name\": \"...\"} — 移除将领\n"
+            "6. {\"action\": \"drum_all\"} — 全军出击\n"
+            "7. {\"action\": \"assign_task\", \"agent_name\": \"...\", \"task\": \"...\"} — 给指定将领分配任务\n"
+            "8. {\"action\": \"update_battle\", \"own\": N, \"enemy\": N, \"strategy\": \"...\"} — 更新战役态势\n"
+            "9. {\"action\": \"clear_log\"} — 清空日志\n"
+            "10. {\"action\": \"help\"} — 显示帮助\n"
+            "11. {\"action\": \"chat\", \"message\": \"...\"} — 自由对话（无法匹配具体操作时使用）\n\n"
+            "当前框架状态：\n" + context + "\n\n"
+            "请只返回一个JSON对象，不要其他文字。"
+        )
+
+        # 在新线程中调用 LLM（避免阻塞 UI）
+        def _llm_call():
+            try:
+                from bingfu.llm.base import LLMMessage, RoleType
+                messages = [
+                    LLMMessage(role=RoleType.SYSTEM, content=system_prompt),
+                    LLMMessage(role=RoleType.USER, content=text),
+                ]
+                response = self.llm_provider.generate(messages, temperature=0.3, max_tokens=512)
+                content = response.content or ""
+
+                # 解析 JSON
+                # 尝试提取 JSON 部分
+                import re
+                json_match = re.search(r'\{[^{}]*\}', content, re.DOTALL)
+                if json_match:
+                    action = json.loads(json_match.group())
+                    self._root.after(0, lambda: self._execute_llm_action(action, text))
+                else:
+                    self._root.after(0, lambda: self._log(f"💬 {content}"))
+
+            except json.JSONDecodeError:
+                self._root.after(0, lambda: self._log(f"⚠️ 军师回复格式异常，原始回复：{content[:100]}"))
+            except Exception as e:
+                self._root.after(0, lambda: self._log(f"❌ 军师调用失败：{e}"))
+                # 降级到关键词匹配
+                self._root.after(0, lambda: self._handle_with_keywords(text))
+
+        thread = threading.Thread(target=_llm_call, daemon=True)
+        thread.start()
+
+    def _build_llm_context(self) -> str:
+        """构建给 LLM 的框架状态上下文"""
+        lines = []
+
+        # 将领信息
+        if self.generals:
+            lines.append("将领列表：")
+            for name, info in self.generals.items():
+                lines.append(f"  - {name} ({info.get('status', 'unknown')}) {info.get('role', '')}")
+        else:
+            lines.append("暂无将领")
+
+        # 战役态势
+        try:
+            own_txt = self.battle_panel.own_label.cget("text")
+            enemy_txt = self.battle_panel.enemy_label.cget("text")
+            lines.append(f"战役态势：己方 {own_txt} / 敌方 {enemy_txt}")
+        except Exception:
+            lines.append("暂无战役数据")
+
+        # Agent 信息（如果有 BingFu 实例）
+        if self.bingfu_instance and hasattr(self.bingfu_instance, 'agents'):
+            if self.bingfu_instance.agents:
+                lines.append("已注册 Agent：")
+                for name, agent in self.bingfu_instance.agents.items():
+                    has_llm = "🧠" if hasattr(agent, 'llm') and agent.llm else "⚠️"
+                    lines.append(f"  - {has_llm} {name} ({agent.role or '无角色'})")
+
+        return "\n".join(lines)
+
+    def _execute_llm_action(self, action: dict, original_text: str):
+        """执行 LLM 返回的操作指令"""
+        act = action.get("action", "chat")
+
+        if act == "query_generals":
+            total = len(self.generals)
+            online = sum(1 for g in self.generals.values() if g["status"] == "online")
+            busy = sum(1 for g in self.generals.values() if g["status"] == "busy")
+            names = "、".join(self.generals.keys()) if self.generals else "（无）"
+            self._log(f"📊 军中共有将领 {total} 位：{names}")
+            self._log(f"   在线 {online} | 作战中 {busy} | 总计 {total}")
+
+        elif act == "query_status":
+            try:
+                own_txt = self.battle_panel.own_label.cget("text")
+                enemy_txt = self.battle_panel.enemy_label.cget("text")
+                strategy = self.battle_panel.strategy_label.cget("text")
+                self._log(f"⚔️ 当前战役态势：")
+                self._log(f"   己方兵力：{own_txt} | 敌方兵力：{enemy_txt}")
+                self._log(f"   战略建议：{strategy}")
+            except Exception:
+                self._log("⚔️ 暂无战役态势数据")
+
+        elif act == "query_reports":
+            if self.reports:
+                self._log(f"📋 共收到 {len(self.reports)} 条军情：")
+                for r in self.reports[-3:]:
+                    self._log(f"   [{r.get('type', 'info').upper()}] {r['title']}：{r['content'][:40]}")
+            else:
+                self._log("📋 暂无军情报告")
+
+        elif act == "add_general":
+            name = action.get("name", "未名将领")
+            status = action.get("status", "online")
+            role = action.get("role", "")
+            self.add_general(name, status, role)
+            self._log(f"✅ 将领 {name} 已加入麾下")
+
+        elif act == "remove_general":
+            name = action.get("name", "")
+            if name:
+                self.remove_general(name)
+                self._log(f"✅ 将领 {name} 已撤离")
+            else:
+                self._log("❌ 请指定将领姓名")
+
+        elif act == "drum_all":
+            self._on_drum()
+
+        elif act == "assign_task":
+            agent_name = action.get("agent_name", "")
+            task = action.get("task", "")
+            if not agent_name or not task:
+                self._log("❌ 请指定将领名称和任务")
+                return
+
+            # 尝试在 BingFu 实例中找到 Agent 并执行
+            if self.bingfu_instance and hasattr(self.bingfu_instance, 'agents'):
+                agent = self.bingfu_instance.agents.get(agent_name)
+                if agent:
+                    self._log(f"🥁 向 {agent_name} 传达军令：{task}")
+                    if hasattr(agent, 'llm') and agent.llm:
+                        # 在新线程执行，避免阻塞 UI
+                        def _exec():
+                            try:
+                                result = agent.drum(task)
+                                self._root.after(0, lambda: self._log(f"📋 {agent_name} 回报：{result[:200]}"))
+                            except Exception as e:
+                                self._root.after(0, lambda: self._log(f"❌ {agent_name} 执行失败：{e}"))
+                        threading.Thread(target=_exec, daemon=True).start()
+                    else:
+                        agent.is_active = True
+                        if agent_name in self.generals:
+                            self.generals[agent_name]["status"] = "busy"
+                            self._refresh_generals()
+                            self._update_stats()
+                        self._log(f"⚠️ {agent_name} 无 LLM 绑定，已标记为出战但无法智能执行")
+                else:
+                    self._log(f"❌ 未找到将领 {agent_name}")
+            else:
+                # 简单模式：更新 UI 状态
+                if agent_name in self.generals:
+                    self.generals[agent_name]["status"] = "busy"
+                    self.generals[agent_name]["message"] = task
+                    self._refresh_generals()
+                    self._update_stats()
+                    self._log(f"🥁 已向 {agent_name} 传达军令：{task}")
+                else:
+                    self._log(f"❌ 未找到将领 {agent_name}，可用将领：{', '.join(self.generals.keys()) or '（无）'}")
+
+        elif act == "update_battle":
+            own = action.get("own", 0)
+            enemy = action.get("enemy", 0)
+            strategy = action.get("strategy", "形势更新中")
+            self.update_battle_status(own, enemy, strategy)
+            self._log(f"✅ 战役态势已更新：己方 {own} | 敌方 {enemy}")
+
+        elif act == "clear_log":
+            self.log_area.config(state="normal")
+            self.log_area.delete("1.0", "end")
+            self.log_area.config(state="disabled")
+            self._log("日志已清空")
+
+        elif act == "help":
+            self._show_help_natural()
+
+        elif act == "chat":
+            # 自由对话，用 LLM 回复
+            message = action.get("message", original_text)
+            if self.llm_provider:
+                def _chat():
+                    try:
+                        from bingfu.llm.base import LLMMessage, RoleType
+                        msgs = [
+                            LLMMessage(role=RoleType.SYSTEM, content="你是兵符框架的军师，用古代军事风格简短回复。"),
+                            LLMMessage(role=RoleType.USER, content=message),
+                        ]
+                        resp = self.llm_provider.generate(msgs, temperature=0.8, max_tokens=256)
+                        self._root.after(0, lambda: self._log(f"💬 军师曰：{resp.content}"))
+                    except Exception as e:
+                        self._root.after(0, lambda: self._log(f"❌ 军师回复失败：{e}"))
+                threading.Thread(target=_chat, daemon=True).start()
+            else:
+                self._log(f"❓ 未能理解：「{message}」")
+
+        else:
+            self._log(f"❓ 未知操作类型：{act}")
+
+    def _handle_with_keywords(self, text: str):
+        """
+        关键词匹配模式（无 LLM 时的降级方案）
         """
         t = text.lower()
 
@@ -696,7 +953,14 @@ class MilitaryCommandConsole:
         """
         self.is_running = True
         self._log("兵符 · 中军帐 已启动")
-        self._log("支持自然语言指令，如：战况如何 / 统计将士数量 / 全军出击")
+
+        if self.llm_provider:
+            self._log(f"🧠 军师已就位：{self.llm_provider}")
+            self._log("支持自然语言智能指令，如：让韩信分析战况 / 给白起派个任务 / 战局如何")
+        else:
+            self._log("⚠️ 未配置军师(LLM)，自然语言使用关键词匹配模式")
+            self._log("支持自然语言指令，如：战况如何 / 统计将士数量 / 全军出击")
+
         self._log("输入「帮助」查看自然语言用法，或输入 /help 查看斜杠命令")
 
         # 初始化示例数据

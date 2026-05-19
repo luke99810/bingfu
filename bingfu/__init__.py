@@ -4,9 +4,11 @@ Inspired by ancient Chinese warfare strategies.
 
 兵符 · 轻量级多智能体框架
 以中国古代军事智慧为灵感的多智能体协作框架
+
+v0.4.0: 新增 LLM 多模型接入层
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "SuXin (州哥)"
 __email__ = "luke99810@example.com"
 
@@ -18,6 +20,9 @@ from bingfu.commander import Commander
 from bingfu.bingfu import BingFu
 from bingfu.tactics import TacticsEngine, SunTzuAgent, TacticType, TacticalContext
 from bingfu.visual import MilitaryCommandConsole
+
+# LLM 模块
+from bingfu.llm import LLMFactory, LLMConfig, LLMManager, LLMProvider
 
 __all__ = [
     # 核心模块
@@ -35,4 +40,9 @@ __all__ = [
     "TacticalContext",
     # 可视化控制台
     "MilitaryCommandConsole",
+    # LLM 模块
+    "LLMFactory",
+    "LLMConfig",
+    "LLMManager",
+    "LLMProvider",
 ]
