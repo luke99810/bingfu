@@ -434,7 +434,7 @@ class MilitaryCommandConsole:
         self.log_area.config(state="disabled")
 
     def _handle_command(self, command: str):
-        """处理用户命令"""
+        """处理用户命令 —— 支持斜杠命令 + 自然语言"""
         if not command.strip():
             return
 
@@ -444,7 +444,7 @@ class MilitaryCommandConsole:
         self.command_history.append(command)
         self.history_index = len(self.command_history)
 
-        # 命令解析
+        # 斜杠命令优先解析
         if command.startswith("/help"):
             self._show_help()
         elif command.startswith("/add "):
@@ -461,8 +461,128 @@ class MilitaryCommandConsole:
             self.log_area.config(state="normal")
             self.log_area.delete("1.0", "end")
             self.log_area.config(state="disabled")
+        elif command.startswith("/"):
+            self._log("未知指令，输入 /help 查看斜杠命令帮助")
         else:
-            self._log("未知命令，输入 /help 查看帮助")
+            # 自然语言理解层
+            self._handle_natural_language(command)
+
+    def _handle_natural_language(self, text: str):
+        """
+        自然语言指令处理器
+        基于关键词匹配，将自然语言映射到具体操作
+        """
+        t = text.lower()
+
+        # ── 查询类 ──────────────────────────────────────────────
+        # 查询将领数量
+        if any(kw in t for kw in ["将士数量", "将领数量", "几位将领", "多少将领",
+                                   "有哪些将领", "将领名单", "点兵", "兵力情况"]):
+            total = len(self.generals)
+            online = sum(1 for g in self.generals.values() if g["status"] == "online")
+            busy   = sum(1 for g in self.generals.values() if g["status"] == "busy")
+            idle   = sum(1 for g in self.generals.values() if g["status"] == "idle")
+            offline = sum(1 for g in self.generals.values() if g["status"] == "offline")
+            names = "、".join(self.generals.keys()) if self.generals else "（无）"
+            self._log(f"📊 军中共有将领 {total} 位：{names}")
+            self._log(f"   在线 {online} | 作战中 {busy} | 待命 {idle} | 离线 {offline}")
+            return
+
+        # 查询战况/当前态势
+        if any(kw in t for kw in ["战况", "战情", "态势", "敌情", "战场形势",
+                                   "目前情况", "当前情况", "现在怎么样", "形势"]):
+            try:
+                own_txt   = self.battle_panel.own_label.cget("text")
+                enemy_txt = self.battle_panel.enemy_label.cget("text")
+                strategy  = self.battle_panel.strategy_label.cget("text")
+                self._log(f"⚔️  当前战役态势：")
+                self._log(f"   己方兵力：{own_txt} | 敌方兵力：{enemy_txt}")
+                self._log(f"   战略建议：{strategy}")
+            except Exception:
+                self._log("⚔️  暂无战役态势数据")
+            return
+
+        # 查询军情报告
+        if any(kw in t for kw in ["军情", "情报", "报告", "有何军情", "战报"]):
+            if self.reports:
+                self._log(f"📋 共收到 {len(self.reports)} 条军情：")
+                for r in self.reports[-3:]:  # 显示最近3条
+                    self._log(f"   [{r.get('type','info').upper()}] {r['title']}：{r['content'][:40]}")
+            else:
+                self._log("📋 暂无军情报告")
+            return
+
+        # ── 操作类 ──────────────────────────────────────────────
+        # 添加将领（识别格式：添加将领 <名字> [状态] [角色]）
+        if any(kw in t for kw in ["添加将领", "加入将领", "新增将领", "招募将领", "部署将领"]):
+            # 提取名字（取命令中的最后一个"词"，或提示用斜杠命令）
+            words = text.replace("添加将领", "").replace("加入将领", "") \
+                        .replace("新增将领", "").replace("招募将领", "") \
+                        .replace("部署将领", "").strip().split()
+            if words:
+                name = words[0]
+                status = words[1] if len(words) > 1 else "online"
+                role   = words[2] if len(words) > 2 else ""
+                self.add_general(name, status, role)
+                self._log(f"✅ 将领 {name} 已加入麾下")
+            else:
+                self._log("请指定将领姓名，例如：添加将领 张辽 online 前锋")
+            return
+
+        # 移除/撤退将领
+        if any(kw in t for kw in ["移除将领", "撤退将领", "撤销将领", "删除将领", "将领撤离"]):
+            words = text.replace("移除将领", "").replace("撤退将领", "") \
+                        .replace("撤销将领", "").replace("删除将领", "") \
+                        .replace("将领撤离", "").strip().split()
+            if words:
+                name = words[0]
+                self.remove_general(name)
+                self._log(f"✅ 将领 {name} 已撤离")
+            else:
+                self._log("请指定将领姓名，例如：移除将领 张辽")
+            return
+
+        # 出击/击鼓
+        if any(kw in t for kw in ["出击", "击鼓", "全军出击", "进攻", "冲锋", "发动进攻"]):
+            self._on_drum()
+            return
+
+        # 收兵/鸣金
+        if any(kw in t for kw in ["收兵", "鸣金", "撤退", "退兵", "鸣金收兵"]):
+            self._log("提示：收兵请点击界面左下角「鸣金」按钮，需确认操作")
+            return
+
+        # 清空日志
+        if any(kw in t for kw in ["清空日志", "清除日志", "清空记录", "清屏"]):
+            self.log_area.config(state="normal")
+            self.log_area.delete("1.0", "end")
+            self.log_area.config(state="disabled")
+            self._log("日志已清空")
+            return
+
+        # 更新战役态势（识别数字）
+        import re
+        nums = re.findall(r'\d+', text)
+        if len(nums) >= 2 and any(kw in t for kw in ["兵力", "对阵", "我军", "敌军", "更新战役", "更新态势"]):
+            own, enemy = int(nums[0]), int(nums[1])
+            strategy = "形势更新中"
+            # 提取策略描述（引号内容 或 最后的词语）
+            quote = re.findall(r'[「"](.*?)[」"]', text)
+            if quote:
+                strategy = quote[0]
+            self.update_battle_status(own, enemy, strategy)
+            self._log(f"✅ 战役态势已更新：己方 {own} | 敌方 {enemy}")
+            return
+
+        # 帮助
+        if any(kw in t for kw in ["帮助", "help", "怎么用", "命令列表", "有什么命令"]):
+            self._show_help_natural()
+            return
+
+        # ── 未能识别 ──────────────────────────────────────────
+        self._log(f"❓ 未能识别指令「{text}」")
+        self._log("   支持自然语言，如：战况如何 / 统计将士数量 / 全军出击")
+        self._log("   或输入 /help 查看斜杠命令，输入「帮助」查看自然语言用法")
 
     def _cmd_add_general(self, args: str):
         """添加将领命令"""
@@ -515,6 +635,32 @@ class MilitaryCommandConsole:
         self.log_area.see("end")
         self.log_area.config(state="disabled")
 
+    def _show_help_natural(self):
+        """显示自然语言帮助"""
+        help_text = """
+╔════════════════════════════════════════════════╗
+║  兵符 · 中军帐 自然语言指令说明                     ║
+╠════════════════════════════════════════════════╣
+║  【查询类】                                       ║
+║  统计我军将士数量 / 有哪些将领 / 点兵               ║
+║  目前战况如何 / 当前态势 / 战场形势                  ║
+║  有何军情 / 战报 / 情报                            ║
+║                                                 ║
+║  【操作类】                                       ║
+║  添加将领 张辽 online 前锋                         ║
+║  移除将领 张辽                                    ║
+║  全军出击 / 出击 / 进攻                            ║
+║  清空日志 / 清屏                                  ║
+║  更新战役 我军30000 敌军80000 「以逸待劳」           ║
+║                                                 ║
+║  【斜杠命令】输入 /help 查看                        ║
+╚════════════════════════════════════════════════╝
+"""
+        self.log_area.config(state="normal")
+        self.log_area.insert("end", help_text)
+        self.log_area.see("end")
+        self.log_area.config(state="disabled")
+
     def _on_drum(self):
         """击鼓 - 全军出击"""
         self._log("🥁 击鼓！全军出击！")
@@ -550,7 +696,8 @@ class MilitaryCommandConsole:
         """
         self.is_running = True
         self._log("兵符 · 中军帐 已启动")
-        self._log("输入 /help 查看可用命令")
+        self._log("支持自然语言指令，如：战况如何 / 统计将士数量 / 全军出击")
+        self._log("输入「帮助」查看自然语言用法，或输入 /help 查看斜杠命令")
 
         # 初始化示例数据
         self._init_demo_data()
